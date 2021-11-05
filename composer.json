@@ -11,7 +11,8 @@
   ],
   "require": {
     "php": ">=7.4",
-    "ext-mysqli": "*"
+    "ext-mysqli": "*",
+    "composer/composer": "^2.1"
   },
   "require-dev": {
     "phpunit/phpunit": "^9.5"
