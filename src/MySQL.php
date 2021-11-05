@@ -45,7 +45,7 @@ class MySQL extends \mysqli
      * getInstance: Get the existing SQL connection, or create one.
      * @return MySQL
      */
-    public static function getInstance($config = 'main'): MySQL
+    public static function getInstance($config = DB_Config::DEFAULT): MySQL
     {
         if (!isset(self::$instance)) {
             self::$instance = new self($config);

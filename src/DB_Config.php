@@ -14,13 +14,14 @@ class DB_Config
     /**
      * @var DB_Config[]
      */
+    public const DEFAULT = "main";
     protected static array $configs = array();
     public string $host;
     public string $user;
     public string $password;
     public string $db;
 
-    public static function getConfig($config_name): DB_Config
+    public static function getConfig($config_name = self::DEFAULT): DB_Config
     {
         if(!isset(self::$configs[$config_name])) {
             self::$configs[$config_name] = new self();
