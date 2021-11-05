@@ -38,7 +38,7 @@ abstract class Model {
     {
         if ($table == null) $table = get_called_class();
         $this->_tablename = strtolower($table);
-        $this->boot();
+        if(method_exists($this, "boot")) $this->boot();
         if ($autofill != null) {
             $this->Fill($autofill);
         }
@@ -599,5 +599,4 @@ abstract class Model {
         $this->is_new = false;
     }
     // </editor-fold>
-    public abstract function boot();
 }
