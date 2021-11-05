@@ -9,6 +9,8 @@
 
 namespace SimpleORM;
 
+use phpDocumentor\Reflection\Types\Callable_;
+
 class DB_Config
 {
     /**
@@ -20,6 +22,8 @@ class DB_Config
     public string $user;
     public string $password;
     public string $db;
+    public int $flags = 0;
+    public \Closure $onError ;
 
     public static function getConfig($config_name = self::DEFAULT): DB_Config
     {
@@ -28,5 +32,7 @@ class DB_Config
         }
         return self::$configs[$config_name];
     }
-
+    public function ErrorEvent($error, $src) {
+        if(is_callable($this->onError)) call_user_func($this->onError, $error, $src);
+    }
 }

@@ -17,6 +17,7 @@ use mysqli_result;
 class MySQL extends \mysqli
 {
     protected static MySQL $instance;
+    protected DB_Config $config;
 
     /**
      * Connects to a MySQL server.
@@ -28,11 +29,9 @@ class MySQL extends \mysqli
      */
     public function __construct(string $config)
     {
-        $host = DB_Config::getConfig($config)->host;
-        $user = DB_Config::getConfig($config)->user;
-        $password = DB_Config::getConfig($config)->password;
-        $db = DB_Config::getConfig($config)->db;
-        @parent::__construct($host, $user, $password, $db);
+        $this->config = DB_Config::getConfig($config);
+
+        @parent::__construct($this->config->host, $this->config->user, $this->config->password, $this->config->db);
         if (mysqli_connect_errno()) {
             die("Connection Error (" .
                 mysqli_connect_error() . ') ' .
@@ -57,10 +56,10 @@ class MySQL extends \mysqli
     {
         Debug::SQL_Query($query);
         if (!$this->real_query($query)) {
-            Debug::SQL_Error($query, $this);
+            $this->config->ErrorEvent($query, $this);
+          //  Debug::SQL_Error($query, $this);
         }
-        $result = new mysqli_result($this);
-        return $result;
+        return new mysqli_result($this);
     }
 
     /*
