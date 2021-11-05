@@ -22,7 +22,7 @@ class DB_Config
 
     public static function getConfig($config_name): DB_Config
     {
-        if(isset(self::$configs[$config_name])) {
+        if(!isset(self::$configs[$config_name])) {
             self::$configs[$config_name] = new self();
         }
         return self::$configs[$config_name];
