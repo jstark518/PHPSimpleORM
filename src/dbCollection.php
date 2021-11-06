@@ -9,7 +9,10 @@
 
 namespace SimpleORM;
 
-class dbCollection implements \ArrayAccess, \Iterator
+use ArrayAccess;
+use Iterator;
+
+class dbCollection implements ArrayAccess, Iterator
 {
     /**
      * @var Model

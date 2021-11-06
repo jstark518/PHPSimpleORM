@@ -1,6 +1,8 @@
 <?php
 namespace SimpleORM;
 
+use mysql_xdevapi\Exception;
+
 /**
  * @property string $created_at
  * @property string $updated_at
@@ -582,7 +584,7 @@ abstract class Model {
     public function __toString()
     {
         if (isset($this->data[$this->primary_key])) return $this->data[$this->primary_key];
-        throw new \mysql_xdevapi\Exception(get_called_class() . " could not be converted to string");
+        throw new Exception(get_called_class() . " could not be converted to string");
     }
 
     public function __debugInfo()

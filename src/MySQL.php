@@ -9,12 +9,13 @@
 
 namespace SimpleORM;
 
+use mysqli;
 use mysqli_result;
 
 /**
  * MySQL Connector class
  */
-class MySQL extends \mysqli
+class MySQL extends mysqli
 {
     protected static MySQL $instance;
     protected DB_Config $config;

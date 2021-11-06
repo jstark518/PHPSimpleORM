@@ -9,6 +9,7 @@
 
 namespace SimpleORM;
 
+use Closure;
 use phpDocumentor\Reflection\Types\Callable_;
 
 class DB_Config
@@ -23,7 +24,7 @@ class DB_Config
     public string $password;
     public string $db;
     public int $flags = 0;
-    public \Closure $onError ;
+    public Closure $onError ;
 
     public static function getConfig($config_name = self::DEFAULT): DB_Config
     {
