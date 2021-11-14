@@ -23,10 +23,7 @@ class MySQL extends mysqli
     /**
      * Connects to a MySQL server.
      *
-     * @param string $host -- Host name of the MySQL server.
-     * @param string $user -- Username for the MySQL server.
-     * @param string $password -- Password for the MySQL server.
-     * @param string $db -- The database to 'use'.
+     * @param string $config
      */
     public function __construct(string $config)
     {
@@ -42,7 +39,7 @@ class MySQL extends mysqli
     }
 
     /**
-     * getInstance: Get the existing SQL connection, or create one.
+     * @param DB_Config[]|string $config
      * @return MySQL
      */
     public static function getInstance($config = DB_Config::DEFAULT): MySQL
@@ -64,7 +61,7 @@ class MySQL extends mysqli
         Debug::SQL_Query($query);
         if (!$this->real_query($query)) {
             $this->config->ErrorEvent($query, $this);
-          //  Debug::SQL_Error($query, $this);
+            //  Debug::SQL_Error($query, $this);
         }
         return new mysqli_result($this);
     }
@@ -74,10 +71,9 @@ class MySQL extends mysqli
      *   takes an array and turns it into SQL with escaped string
      * @param $table
      * @param $data
-     * @param string $db
      * @return mysqli_result
      */
-    public function insertArray($table, $data, $db = ''): mysqli_result
+    public function insertArray($table, $data): mysqli_result
     {
         foreach ($data as $field => $value) {
             $fields[] = '`' . $field . '`';

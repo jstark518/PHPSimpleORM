@@ -1,4 +1,5 @@
 <?php
+
 namespace SimpleORM;
 
 use mysql_xdevapi\Exception;
@@ -7,7 +8,8 @@ use mysql_xdevapi\Exception;
  * @property string $created_at
  * @property string $updated_at
  */
-abstract class Model {
+abstract class Model
+{
 // <editor-fold desc="class properties">
     protected array $resolved_data;
     protected array $data;
@@ -41,7 +43,7 @@ abstract class Model {
     {
         if ($table == null) $table = get_called_class();
         $this->_tablename = self::_table_name($table);
-        if(method_exists($this, "boot")) $this->boot();
+        if (method_exists($this, "boot")) $this->boot();
         if ($autofill != null) {
             $this->Fill($autofill);
         }
@@ -138,7 +140,7 @@ abstract class Model {
     /**
      * Query Builder: Adds a LIMIT to the query
      * @param int|string $limit
-     * @return $this
+     * @return self
      */
     public function LIMIT($limit): Model
     {
@@ -150,7 +152,7 @@ abstract class Model {
      * Query Builder: Ands an ORDER BY to the query
      * @param string $field
      * @param string $sort
-     * @return $this
+     * @return self
      */
     public function ORDERBY(string $field, string $sort = SQL::Ascending): Model
     {
@@ -162,7 +164,7 @@ abstract class Model {
      * Query Builder: Adds a WHERE $field (defaults to created_at) = $date to the query
      * @param $date
      * @param string $field
-     * @return $this
+     * @return self
      */
     public function DATEWHERE($date, string $field = "created_at"): Model
     {
@@ -174,7 +176,7 @@ abstract class Model {
     /**
      * Query Builder: Adds a GROUP BY to the query
      * @param $fields
-     * @return $this
+     * @return self
      */
     public function GROUPBY($fields): Model
     {
@@ -191,7 +193,7 @@ abstract class Model {
      *   although very similar to GET but this bypasses
      *   the DBCollection since we're only looking for one row
      * @param string $select_fields
-     * @return Model
+     * @return self
      */
     public function FIRST(string $select_fields = "*"): ?Model
     {
@@ -261,9 +263,9 @@ abstract class Model {
     /**
      * Get a Model to only do an update
      * @param $id
-     * @return mixed
+     * @return Model
      */
-    public static function getForUpdateOnly($id)
+    public static function getForUpdateOnly($id): Model
     {
         $get_called_class = get_called_class();
         $result_to_return = new $get_called_class();
@@ -548,7 +550,7 @@ abstract class Model {
         $sql = MySQL::getInstance();
         $value = is_numeric($this->data[$this->primary_key]) ? $this->data[$this->primary_key] : "'" . $sql->real_escape_string($this->data[$this->primary_key]) . "'";
 
-        $query = sprintf(/** @lang MySQl */"DELETE FROM `%s` WHERE `%s` = %s", $this->_tablename, $this->primary_key, $value);
+        $query = sprintf(/** @lang MySQl */ "DELETE FROM `%s` WHERE `%s` = %s", $this->_tablename, $this->primary_key, $value);
         $sql->query($query);
         $this->is_deleted = true;
     }
@@ -604,23 +606,25 @@ abstract class Model {
      * @param $key
      * @param $class
      * @param string $fkcol
+     * @return bool
      */
-    public function ResolveForeignKey(bool $ignore_hidden_keys, $key, $class, string $fkcol = 'id')
+    public function ResolveForeignKey(bool $ignore_hidden_keys, $key, $class, string $fkcol = 'id'): Bool
     {
         $result_value = $this->data[$key];
         if (empty($result_value)) return; // Don't resolve null.
         if ($ignore_hidden_keys && in_array($key, $this->hidden_keys)) {
-            return; // Don't resolve hidden keys, we'll lazy load them if read.
+            return false; // Don't resolve hidden keys, we'll lazy load them if read.
         }
         $data = SQLCache::GetFromCache($class, $result_value, function ($class, $key, $col) {
             return $class::find($key, $col);
         }, $fkcol);
         if ($data === null) {
             Debug::Warn("$key in $class failed ($result_value)");
-            return;
+            return false;
         }
         $data->ResolveForeignKeys();
         $this->ResolvedSet($key, $data);
+        return true;
     }
 
     /**
