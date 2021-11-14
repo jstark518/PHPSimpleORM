@@ -53,6 +53,12 @@ class MySQL extends mysqli
         return self::$instance;
     }
 
+    /**
+     * Override for query
+     * @param string $query
+     * @param null $resultmode
+     * @return mysqli_result
+     */
     public function query($query, $resultmode = NULL): mysqli_result
     {
         Debug::SQL_Query($query);
@@ -63,9 +69,13 @@ class MySQL extends mysqli
         return new mysqli_result($this);
     }
 
-    /*
+    /**
      * This function inserts data to the database
-     *  takes an array and turns it into SQL with escaped string
+     *   takes an array and turns it into SQL with escaped string
+     * @param $table
+     * @param $data
+     * @param string $db
+     * @return mysqli_result
      */
     public function insertArray($table, $data, $db = ''): mysqli_result
     {
@@ -88,11 +98,15 @@ class MySQL extends mysqli
         return $result;
     }
 
-    /*
+    /**
      * This function inserts data to the database
      *   takes an array and turns it into SQL with escaped string
-     * TODO: Shares a lot of code with insertArray, can probably be merged.
-    */
+     * @param $table
+     * @param $data
+     * @param $key
+     * @param $keyvalue
+     * @return mysqli_result
+     */
     public function updateArray($table, $data, $key, $keyvalue): mysqli_result
     {
         foreach ($data as $field => $value) {
@@ -113,6 +127,10 @@ class MySQL extends mysqli
         return $result;
     }
 
+    /**
+     * Get the MySQL server's current time
+     * @return mixed
+     */
     public static function Now()
     {
         $inst = self::getInstance();
