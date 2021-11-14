@@ -611,7 +611,7 @@ abstract class Model
     public function ResolveForeignKey(bool $ignore_hidden_keys, $key, $class, string $fkcol = 'id'): Bool
     {
         $result_value = $this->data[$key];
-        if (empty($result_value)) return; // Don't resolve null.
+        if (empty($result_value)) return false; // Don't resolve null.
         if ($ignore_hidden_keys && in_array($key, $this->hidden_keys)) {
             return false; // Don't resolve hidden keys, we'll lazy load them if read.
         }
