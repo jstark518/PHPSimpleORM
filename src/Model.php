@@ -29,14 +29,15 @@ abstract class Model {
 
     private bool $is_dirty = false;
     private bool $is_new = true;
-    /**
-     * @var bool
-     */
     private bool $is_deleted = false;
 
     // </editor-fold>
 
-    public function __construct($table = null, $autofill = null)
+    /**
+     * @param string|null $table
+     * @param array|null $autofill
+     */
+    public function __construct(string $table = null, array $autofill = null)
     {
         if ($table == null) $table = get_called_class();
         $this->_tablename = self::_table_name($table);
@@ -49,6 +50,10 @@ abstract class Model {
         }
     }
 
+    /**
+     * @param $className
+     * @return string
+     */
     protected static function _table_name($className): string
     {
         return SQLCache::GetFromCache($className, 'metadata', function ($class, $key, $col) {
@@ -60,6 +65,7 @@ abstract class Model {
     // <editor-fold desc="Query builder chaining functions">
 
     /**
+     * Start of the Query Builder
      * @return static
      */
     public static function Select(): self
@@ -68,7 +74,14 @@ abstract class Model {
         return new $me();
     }
 
-    public function WHERE($where, $type = SQL::AND, $group = 0): Model
+    /**
+     * Query Builder: Where
+     * @param array $where
+     * @param string $type
+     * @param bool $group
+     * @return $this
+     */
+    public function WHERE(array $where, string $type = SQL::AND, bool $group = false): Model
     {
         if (count($where) == 0) return $this;
         $data = [
@@ -80,48 +93,89 @@ abstract class Model {
         return $this;
     }
 
-    public function GROUPWHERE($where, $type = SQL::AND): Model
+    /**
+     * Query Builder: Group Where
+     * @param array $where
+     * @param string $type
+     * @return $this
+     */
+    public function GROUPWHERE(array $where, string $type = SQL::AND): Model
     {
         return $this->WHERE($where, $type, true);
     }
 
+    /**
+     * Query Builder: Adds an AND to the query
+     * @return $this
+     */
     public function AND(): Model
     {
         self::$where[] = "AND";
         return $this;
     }
 
+    /**
+     * Query Builder: Adds an OR to the query
+     * @return $this
+     */
     public function OR(): Model
     {
         self::$where[] = "OR";
         return $this;
     }
 
-    public function ISNULL($field): Model
+    /**
+     * Query Builder: Adds a ISNULL check to the query
+     * @param string $field
+     * @return $this
+     */
+    public function ISNULL(string $field): Model
     {
-        self::$where[] = "`{$field}` IS NULL";
+        self::$where[] = "`$field` IS NULL";
         return $this;
     }
 
+    /**
+     * Query Builder: Adds a LIMIT to the query
+     * @param int|string $limit
+     * @return $this
+     */
     public function LIMIT($limit): Model
     {
         self::$limit = $limit;
         return $this;
     }
 
-    public function ORDERBY($field, $sort = SQL::Ascending): Model
+    /**
+     * Query Builder: Ands an ORDER BY to the query
+     * @param string $field
+     * @param string $sort
+     * @return $this
+     */
+    public function ORDERBY(string $field, string $sort = SQL::Ascending): Model
     {
         self::$orderby = "`$field` $sort";
         return $this;
     }
 
-    public function DATEWHERE($date, $field = "created_at"): Model
+    /**
+     * Query Builder: Adds a WHERE $field (defaults to created_at) = $date to the query
+     * @param $date
+     * @param string $field
+     * @return $this
+     */
+    public function DATEWHERE($date, string $field = "created_at"): Model
     {
         if (strlen($date) > 0)
-            self::$where[] = "date(`{$field}`) = \"{$date}\"";
+            self::$where[] = "date(`$field`) = \"$date\"";
         return $this;
     }
 
+    /**
+     * Query Builder: Adds a GROUP BY to the query
+     * @param $fields
+     * @return $this
+     */
     public function GROUPBY($fields): Model
     {
         if (is_array($fields)) {
@@ -132,18 +186,18 @@ abstract class Model {
         return $this;
     }
 
-    /*
+    /**
      * A final function for the Query Builder
-     *      although very similar to GET but this bypasses
-     *      the DBCollection since we're only looking for one row
-     *
-     * Note any use of LIMIT will be ignored
+     *   although very similar to GET but this bypasses
+     *   the DBCollection since we're only looking for one row
+     * @param string $select_fields
+     * @return Model
      */
-    public function FIRST($select_fields = "*")
+    public function FIRST(string $select_fields = "*"): ?Model
     {
         $sql = MySQL::getInstance();
         $get_called_class = get_called_class();
-        $query = $this->QueryBuilderBuild($sql, $select_fields, 1);
+        $query = $this->QueryBuilderBuild($select_fields, 1);
         $result = $sql->query($query);
 
         if ($result->num_rows == 0) {
@@ -155,13 +209,15 @@ abstract class Model {
         return new $get_called_class($get_called_class, $row);
     }
 
-    /*
+    /**
      * A final function for the Query Builder
-     *      This is the same as FIRST but if the record doesn't exist it will create it
-     *      optionally $callback will be called if a new record is created
+     *   This is the same as FIRST but if the record doesn't exist it will create it
+     *   optionally $callback will be called if a new record is created
+     * @param ?callable $callback
+     * @param string $select_fields
+     * @return Model
      */
-
-    public function FIRSTORNEW($callback = null, $select_fields = "*")
+    public function FIRSTORNEW(callable $callback = null, string $select_fields = "*"): Model
     {
         $find_results = $this->FIRST($select_fields);       // Try to find
         if ($find_results) return $find_results;             // If found return, nothing else to do!
@@ -173,21 +229,19 @@ abstract class Model {
         return $result_to_return;
     }
 
-    /*
-     * A final function for the Query Builder
-     *      This function takes the chained functions and builds the query
-     *  Note: We are not able to create a function that creates a new record if no results
-     *          due to the fact this returns a dbCollection
-     */
     /**
+     * A final function for the Query Builder
+     *   This function takes the chained functions and builds the query
+     *   Note: We are not able to create a function that creates a new record if no results
+     *   due to the fact this returns a dbCollection
      * @param string $select_fields
      * @return dbCollection
      */
-    public function GET($select_fields = "*"): ?dbCollection
+    public function GET(string $select_fields = "*"): ?dbCollection
     {
         $sql = MySQL::getInstance();
         $get_called_class = get_called_class();
-        $query = $this->QueryBuilderBuild($sql, $select_fields);
+        $query = $this->QueryBuilderBuild($select_fields);
         $result = $sql->query($query);
 
         if ($result->num_rows == 0) {
@@ -204,16 +258,25 @@ abstract class Model {
 
     // </editor-fold>
 
+    /**
+     * Get a Model to only do an update
+     * @param $id
+     * @return mixed
+     */
     public static function getForUpdateOnly($id)
     {
         $get_called_class = get_called_class();
-        $result_to_return = new $get_called_class($get_called_class);
+        $result_to_return = new $get_called_class();
         $result_to_return->is_new = false;
         $result_to_return->is_dirty = true;
         $result_to_return->{$result_to_return->primary_key} = $id;
         return $result_to_return;
     }
 
+    /**
+     * @param $dest
+     * @return dbCollection|null
+     */
     public function GetChildren($dest): ?dbCollection
     {
         $get_called_class = get_called_class();
@@ -244,6 +307,10 @@ abstract class Model {
         return $result_to_output;
     }
 
+    /**
+     * @param $source
+     * @return dbCollection|null
+     */
     public static function GetBySource($source): ?dbCollection
     {
         $get_called_class = get_called_class();
@@ -274,7 +341,12 @@ abstract class Model {
         return $result_to_output;
     }
 
-    public static function SimpleWhere($where, $type = "AND")
+    /**
+     * @param array $where
+     * @param string $type
+     * @return dbCollection|null
+     */
+    public static function SimpleWhere(array $where, string $type = "AND"): ?dbCollection
     {
         $get_called_class = get_called_class();
         $table = self::_table_name(get_called_class());
@@ -288,11 +360,11 @@ abstract class Model {
         foreach ($dwhere as $x) {
             if (count($x) == 2) {
                 $value = $sql->real_escape_string($x[1]);
-                $fields[] = "`{$x[0]}` = '$value'";
+                $fields[] = "`$x[0]` = '$value'";
             }
             if (count($x) == 3) {
                 $value = $sql->real_escape_string($x[2]);
-                $fields[] = "`{$x[0]}` {$x[1]} '$value'";
+                $fields[] = "`$x[0]` $x[1] '$value'";
             }
         }
         $field_list = join($type, $fields);
@@ -311,6 +383,10 @@ abstract class Model {
         return $result_to_output;
     }
 
+    /**
+     * Gets all records
+     * @return dbCollection|null
+     */
     public static function All(): ?dbCollection
     {
         $get_called_class = get_called_class();
@@ -332,7 +408,13 @@ abstract class Model {
         return $result_to_output;
     }
 
-    public static function find($value, $otherkey = null)
+    /**
+     * Finds a record by primary key or optional $otherkey
+     * @param $value
+     * @param string|null $otherkey
+     * @return Model
+     */
+    public static function find($value, string $otherkey = null): ?Model
     {
         $get_called_class = get_called_class();
         $result_to_return = new $get_called_class($get_called_class);
@@ -346,7 +428,6 @@ abstract class Model {
         $result = $sql->query($query);
 
         if ($result->num_rows == 0) {
-            Debug::Info("Find {$result_to_return->_tablename}.{$key} = {$value} returned 0 rows");
             return null;
         }
         $row = $result->fetch_assoc();
@@ -354,7 +435,15 @@ abstract class Model {
         return $result_to_return;
     }
 
-    public static function findOrNew($value, $callback = null, $otherkey = null)
+    /**
+     * Finds a record by primary key or optional $otherkey
+     *   If no record is found it will create on and call $callback
+     * @param $value
+     * @param callable|null $callback
+     * @param string|null $otherkey
+     * @return mixed|Model
+     */
+    public static function findOrNew($value, callable $callback = null, string $otherkey = null)
     {
         $find_results = self::find($value, $otherkey);                 // Try to find
         if ($find_results) return $find_results;             // If found return, nothing else to do!
@@ -369,15 +458,14 @@ abstract class Model {
     /**
      * Function: QueryBuilderBuild
      *      Builds the query based on the chained functions (ones in call caps)
-     * @param MySQL $sql Instance of the mysqli client
      * @param string $select_fields What fields to select
      * @param int|null $hardlimit opt: if defined will ignore limit in the chain and use this
      * @return string the mysql query
      */
-    private function QueryBuilderBuild(MySQL $sql, string $select_fields = "*", int $hardlimit = null): string
+    private function QueryBuilderBuild(string $select_fields = "*", int $hardlimit = null): string
     {
         $data = self::$where;
-        $limit = $hardlimit ? $hardlimit : self::$limit;
+        $limit = $hardlimit ?: self::$limit;
 
         $sort = self::$orderby;
         $groupby = self::$groupby;
@@ -388,18 +476,18 @@ abstract class Model {
                 foreach ($d['values'] as $v) {
                     if (count($v) == 2) {
                         $value = $v[1];
-                        $fields[] = "`{$v[0]}` = '$value'";
+                        $fields[] = "`$v[0]` = '$value'";
                     }
                     if (count($v) == 3) {
                         $value = $v[2];
-                        $fields[] = "`{$v[0]}` {$v[1]} '$value'";
+                        $fields[] = "`$v[0]` $v[1] '$value'";
                     }
                 }
                 if ($d['group']) $field_list .= "(";
                 $field_list .= join(' ' . $d['type'] . ' ', $fields);
                 if ($d['group']) $field_list .= ")";
             } else {
-                $field_list .= " {$d} ";
+                $field_list .= " $d ";
             }
         }
         $field_list = trim($field_list);
@@ -413,8 +501,8 @@ abstract class Model {
             $query = sprintf(/** @lang sql */ "SELECT %s FROM `%s`", $select_fields, $this->_tablename);
 
         if (count($groupby) > 0) $query .= " GROUP BY " . join(',', $groupby);
-        if ($sort != "") $query .= " ORDER BY {$sort}";
-        if ($limit != 0) $query .= " LIMIT {$limit}";
+        if ($sort != "") $query .= " ORDER BY $sort";
+        if ($limit != 0) $query .= " LIMIT $limit";
 
         self::$where = array();
         self::$orderby = "";
@@ -422,9 +510,14 @@ abstract class Model {
         return $query;
     }
 
-    public function save($ignoreifdirty = false)
+    /**
+     * Commit to database
+     * @param false $ignoreifdirty
+     * @return Model|null
+     */
+    public function save(bool $ignoreifdirty = false): ?Model
     {
-        if ($this->is_dirty == false && $ignoreifdirty == false) return; // Nothing to save
+        if ($this->is_dirty == false && $ignoreifdirty == false) return null; // Nothing to save
         $sql = MySQL::getInstance();
         if ($this->is_new) {
             if ($this->database_timestamps) {
@@ -444,8 +537,12 @@ abstract class Model {
             $this->is_dirty = false;
             $this->is_new = false;
         }
+        return $this;
     }
 
+    /**
+     * Deletes from the database
+     */
     public function delete()
     {
         $sql = MySQL::getInstance();
@@ -456,15 +553,21 @@ abstract class Model {
         $this->is_deleted = true;
     }
 
+    /**
+     * Undo any changes since getting the record from the database
+     */
     public function rollback()
     {
         $this->data = $this->orgdata;
         $this->is_dirty = false; // Since we're back to in-sync with the server's database we're not "dirty" anymore.
     }
 
-    public function refresh()
+    /**
+     * Will get the most current record from the database
+     * @return bool
+     */
+    public function refresh(): bool
     {
-        // return $this->find($this->data[$this->primary_key], $this->primary_key); // very similar to this function but it's static so it will return an new instance of the class
         $sql = MySQL::getInstance();
 
         $value = is_numeric($this->data[$this->primary_key]) ? $this->data[$this->primary_key] : "'" . $sql->real_escape_string($this->data[$this->primary_key]) . "'";
@@ -473,7 +576,6 @@ abstract class Model {
         $result = $sql->query($query);
 
         if ($result->num_rows == 0) {
-            Debug::Info("Find {$this->_tablename}.{$this->primary_key} = {$value} returned 0 rows");
             return false;
         }
         $row = $result->fetch_assoc();
@@ -482,7 +584,10 @@ abstract class Model {
         return true;
     }
 
-    public function ResolveForeignKeys($ignore_hidden_keys = true)
+    /**
+     * @param bool $ignore_hidden_keys
+     */
+    public function ResolveForeignKeys(bool $ignore_hidden_keys = true)
     {
         foreach ($this->conditional_foreign_keymap as $key => $_class) {
             $class = call_user_func($_class, $this);
@@ -494,7 +599,13 @@ abstract class Model {
         }
     }
 
-    public function ResolveForeignKey($ignore_hidden_keys, $key, $class, $fkcol = 'id')
+    /**
+     * @param bool $ignore_hidden_keys
+     * @param $key
+     * @param $class
+     * @param string $fkcol
+     */
+    public function ResolveForeignKey(bool $ignore_hidden_keys, $key, $class, string $fkcol = 'id')
     {
         $result_value = $this->data[$key];
         if (empty($result_value)) return; // Don't resolve null.
@@ -512,7 +623,12 @@ abstract class Model {
         $this->ResolvedSet($key, $data);
     }
 
-    public function toArray($hide_db_time, $showempty = false): array
+    /**
+     * @param bool $hide_db_time
+     * @param bool $showempty
+     * @return array
+     */
+    public function toArray(bool $hide_db_time, bool $showempty = false): array
     {
         return array_merge(
             array_filter($this->data, function ($v, $k) use ($hide_db_time, $showempty) {
@@ -522,16 +638,28 @@ abstract class Model {
             $this->toArrayWith($this->resolved_data ?? array(), $hide_db_time, $showempty)
         );
     }
-    // Merging arrays while calling toArray() on each element
-    // Better way to do this??
-    private function toArrayWith($array, $hide_db_time, $showempty = false): array
+
+    /**
+     * @param $array
+     * @param bool $hide_db_time
+     * @param bool $showempty
+     * @return array
+     */
+    private function toArrayWith($array, bool $hide_db_time, bool $showempty = false): array
     {
+        // Merging arrays while calling toArray() on each element
+        // Better way to do this??
         $out = array();
         foreach ($array as $k => $v) $out[$k] = $v->toArray($hide_db_time, $showempty);
         return $out;
     }
 
-    public function isHiddenKey($key, $hide_db_time): bool
+    /**
+     * @param $key
+     * @param bool $hide_db_time
+     * @return bool
+     */
+    public function isHiddenKey($key, bool $hide_db_time): bool
     {
         if ($hide_db_time && ($key == "created_at" || $key == "updated_at")) return true;
         return in_array($key, $this->hidden_keys);
@@ -539,12 +667,20 @@ abstract class Model {
 
     // <editor-fold desc="Magic Functions">
 
+    /**
+     * @param $name
+     * @param $value
+     */
     public function ResolvedSet($name, $value)
     {  // not really magic but along with same lines as __set
         $this->resolved_data[$name] = $value;
     }
 
-    // Magic set function
+    /**
+     * Magic set function
+     * @param $name
+     * @param $value
+     */
     public function __set($name, $value)
     {
         if (isset($this->data[$name]) && $this->data[$name] === $value) return; // Ignore set if it's the same value
@@ -552,7 +688,11 @@ abstract class Model {
         $this->is_dirty = true;
     }
 
-    // Magic get function
+    /**
+     * Magic get function
+     * @param $name
+     * @return mixed|null
+     */
     public function __get($name)
     {
         $name = strtolower($name);
@@ -575,24 +715,39 @@ abstract class Model {
         return $this->data[$name];
     }
 
-    // Magic isset function
+    /**
+     * Magic isset function
+     * @param $name
+     * @return bool
+     */
     public function __isset($name)
     {
         return isset($this->data[$name]);
     }
 
-    // Magic unset function
+    /**
+     * Magic unset function
+     * @param $name
+     */
     public function __unset($name)
     {
         unset($this->data[$name]);
     }
 
+    /**
+     * Magic toString
+     * @return mixed
+     */
     public function __toString()
     {
         if (isset($this->data[$this->primary_key])) return $this->data[$this->primary_key];
         throw new Exception(get_called_class() . " could not be converted to string");
     }
 
+    /**
+     * Magic debugInfo
+     * @return array[]
+     */
     public function __debugInfo()
     {
         return [
@@ -600,8 +755,12 @@ abstract class Model {
         ];
     }
 
+    /**
+     * Hydrates the Model
+     * @param $args
+     */
     private function Fill($args)
-    { // Also not magic but works with the data magic uses
+    {
         $this->data = $args;
         $this->orgdata = $args;
         $this->is_new = false;
