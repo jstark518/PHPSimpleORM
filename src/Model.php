@@ -39,7 +39,7 @@ abstract class Model {
     public function __construct($table = null, $autofill = null)
     {
         if ($table == null) $table = get_called_class();
-        $this->_tablename = strtolower($table);
+        $this->_tablename = self::_table_name($table);
         if(method_exists($this, "boot")) $this->boot();
         if ($autofill != null) {
             $this->Fill($autofill);
@@ -47,6 +47,14 @@ abstract class Model {
         if ($this->foreign_keymap === null) {
             $this->foreign_keymap = Database_Structure::GetFKForTable($table);
         }
+    }
+
+    protected static function _table_name($className): string
+    {
+        return SQLCache::GetFromCache($className, 'metadata', function ($class, $key, $col) {
+            preg_match_all("/(^[a-z]|[A-Z0-9])[a-z]*/", $class, $matches);
+            return strtolower(join("_", $matches[0]));
+        }, '_db_table');
     }
 
     // <editor-fold desc="Query builder chaining functions">
@@ -209,7 +217,7 @@ abstract class Model {
     public function GetChildren($dest): ?dbCollection
     {
         $get_called_class = get_called_class();
-        $table = strtolower($dest);
+        $table = self::_table_name($dest);
         $sql = MySQL::getInstance();
 
         $fks = Database_Structure::GetFKForTable($table);
@@ -239,7 +247,7 @@ abstract class Model {
     public static function GetBySource($source): ?dbCollection
     {
         $get_called_class = get_called_class();
-        $table = strtolower(get_called_class());
+        $table = self::_table_name(get_called_class());
         $sql = MySQL::getInstance();
 
         $source_class = get_class($source);
@@ -269,7 +277,7 @@ abstract class Model {
     public static function SimpleWhere($where, $type = "AND")
     {
         $get_called_class = get_called_class();
-        $table = strtolower(get_called_class());
+        $table = self::_table_name(get_called_class());
         $sql = MySQL::getInstance();
 
         if (!is_array($where)) {
@@ -306,7 +314,7 @@ abstract class Model {
     public static function All(): ?dbCollection
     {
         $get_called_class = get_called_class();
-        $table = strtolower($get_called_class);
+        $table = self::_table_name($get_called_class);
         $sql = MySQL::getInstance();
 
         $query = sprintf(/** @lang sql */ "SELECT * FROM %s", $table);
