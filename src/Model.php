@@ -297,7 +297,7 @@ abstract class Model {
         }
         $field_list = join($type, $fields);
 
-        $query = sprintf(/** @lang sql */ "SELECT * FROM %s WHERE %s", $table, $field_list);
+        $query = sprintf(/** @lang sql */ "SELECT * FROM `%s` WHERE %s", $table, $field_list);
         $result = $sql->query($query);
 
         if ($result->num_rows == 0) {
@@ -317,7 +317,7 @@ abstract class Model {
         $table = self::_table_name($get_called_class);
         $sql = MySQL::getInstance();
 
-        $query = sprintf(/** @lang sql */ "SELECT * FROM %s", $table);
+        $query = sprintf(/** @lang sql */ "SELECT * FROM `%s`", $table);
         $result = $sql->query($query);
 
         if ($result->num_rows == 0) {
@@ -342,7 +342,7 @@ abstract class Model {
 
         if (!is_numeric($value)) $value = "'" . $sql->real_escape_string($value) . "'";
 
-        $query = sprintf(/** @lang sql */ "SELECT * FROM %s WHERE %s = %s", $result_to_return->_tablename, $key, $value);
+        $query = sprintf(/** @lang sql */ "SELECT * FROM `%s` WHERE %s = %s", $result_to_return->_tablename, $key, $value);
         $result = $sql->query($query);
 
         if ($result->num_rows == 0) {
@@ -408,9 +408,9 @@ abstract class Model {
         $field_list = trim($field_list);
 
         if ($field_list != "")
-            $query = sprintf(/** @lang sql */ "SELECT %s FROM %s WHERE %s", $select_fields, $this->_tablename, $field_list);
+            $query = sprintf(/** @lang sql */ "SELECT %s FROM `%s` WHERE %s", $select_fields, $this->_tablename, $field_list);
         else
-            $query = sprintf(/** @lang sql */ "SELECT %s FROM %s", $select_fields, $this->_tablename);
+            $query = sprintf(/** @lang sql */ "SELECT %s FROM `%s`", $select_fields, $this->_tablename);
 
         if (count($groupby) > 0) $query .= " GROUP BY " . join(',', $groupby);
         if ($sort != "") $query .= " ORDER BY {$sort}";
@@ -451,8 +451,7 @@ abstract class Model {
         $sql = MySQL::getInstance();
         $value = is_numeric($this->data[$this->primary_key]) ? $this->data[$this->primary_key] : "'" . $sql->real_escape_string($this->data[$this->primary_key]) . "'";
 
-        $query = /** @lang MySQl */
-            "DELETE FROM `($this->_tablename) WHERE `{$this->primary_key}` = $value";
+        $query = sprintf(/** @lang MySQl */"DELETE FROM `%s` WHERE `%s` = %s", $this->_tablename, $this->primary_key, $value);
         $sql->query($query);
         $this->is_deleted = true;
     }
@@ -470,8 +469,7 @@ abstract class Model {
 
         $value = is_numeric($this->data[$this->primary_key]) ? $this->data[$this->primary_key] : "'" . $sql->real_escape_string($this->data[$this->primary_key]) . "'";
 
-        $query = /** @lang MySql */
-            "SELECT * FROM {$this->_tablename} WHERE {$this->primary_key} = {$value}";
+        $query = sprintf(/** @lang MySQL */ "SELECT * FROM `%s` WHERE %s = %s", $this->_tablename, $this->primary_key, $value);
         $result = $sql->query($query);
 
         if ($result->num_rows == 0) {
