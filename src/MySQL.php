@@ -80,7 +80,7 @@ class MySQL extends mysqli
         $field_list = join(',', $fields);
         $value_list = join(', ', $values);
 
-        $query = sprintf(/** @lang sql */ "INSERT INTO {$table} (%s) VALUES (%s)", $field_list, $value_list);
+        $query = sprintf(/** @lang sql */ "INSERT INTO `%s` (%s) VALUES (%s)", $table, $field_list, $value_list);
 
         if (!($result = $this->query($query))) {
             Debug::SQL_Error($query, $this);
@@ -105,7 +105,7 @@ class MySQL extends mysqli
         }
         $field_list = join(',', $fields);
 
-        $query = sprintf(/** @lang sql */ "UPDATE %s SET %s WHERE %s = %s", $table, $field_list, $key, $keyvalue);
+        $query = sprintf(/** @lang sql */ "UPDATE `%s` SET %s WHERE %s = %s", $table, $field_list, $key, $keyvalue);
 
         if (!($result = $this->query($query))) {
             Debug::SQL_Error($query, $this);
