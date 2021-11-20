@@ -18,7 +18,7 @@ class DB_Config
      * @var DB_Config[]
      */
     public const DEFAULT = "main";
-    protected static array $configs = array();
+    private static array $configs = array();
     public string $host;
     public string $user;
     public string $password;
@@ -26,14 +26,15 @@ class DB_Config
     public int $flags = 0;
     public Closure $onError ;
 
-    public static function getConfig($config_name = self::DEFAULT): DB_Config
+    public static function getConfig(string $config_name = self::DEFAULT): DB_Config
     {
         if(!isset(self::$configs[$config_name])) {
             self::$configs[$config_name] = new self();
         }
         return self::$configs[$config_name];
     }
-    public function ErrorEvent($error, $src) {
+    final public function ErrorEvent(string $error, object $src): void
+    {
         if(is_callable($this->onError)) call_user_func($this->onError, $error, $src);
     }
 }

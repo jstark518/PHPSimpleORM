@@ -1,10 +1,6 @@
 <?php
 /*
- * Copyright (c) 2021. Lorem ipsum dolor sit amet, consectetur adipiscing elit.
- * Morbi non lorem porttitor neque feugiat blandit. Ut vitae ipsum eget quam lacinia accumsan.
- * Etiam sed turpis ac ipsum condimentum fringilla. Maecenas magna.
- * Proin dapibus sapien vel ante. Aliquam erat volutpat. Pellentesque sagittis ligula eget metus.
- * Vestibulum commodo. Ut rhoncus gravida arcu.
+ * Copyright (c) 2021.
  */
 
 namespace SimpleORM;
@@ -42,7 +38,7 @@ class MySQL extends mysqli
      * @param DB_Config[]|string $config
      * @return MySQL
      */
-    public static function getInstance($config = DB_Config::DEFAULT): MySQL
+    public static function getInstance(string $config = DB_Config::DEFAULT): MySQL
     {
         if (!isset(self::$instance)) {
             self::$instance = new self($config);
@@ -56,7 +52,7 @@ class MySQL extends mysqli
      * @param null $resultmode
      * @return mysqli_result
      */
-    public function query($query, $resultmode = NULL): mysqli_result
+    final public function query($query, $resultmode = NULL): mysqli_result
     {
         Debug::SQL_Query($query);
         if (!$this->real_query($query)) {
@@ -69,11 +65,11 @@ class MySQL extends mysqli
     /**
      * This function inserts data to the database
      *   takes an array and turns it into SQL with escaped string
-     * @param $table
-     * @param $data
+     * @param string $table
+     * @param array $data
      * @return mysqli_result
      */
-    public function insertArray($table, $data): mysqli_result
+    final public function insertArray(string $table, array $data): mysqli_result
     {
         foreach ($data as $field => $value) {
             $fields[] = '`' . $field . '`';
@@ -97,13 +93,13 @@ class MySQL extends mysqli
     /**
      * This function inserts data to the database
      *   takes an array and turns it into SQL with escaped string
-     * @param $table
-     * @param $data
-     * @param $key
-     * @param $keyvalue
+     * @param string $table
+     * @param array $data
+     * @param string $key
+     * @param string $keyvalue
      * @return mysqli_result
      */
-    public function updateArray($table, $data, $key, $keyvalue): mysqli_result
+    final public function updateArray(string $table, array $data, string $key, string $keyvalue): mysqli_result
     {
         foreach ($data as $field => $value) {
             if (in_array($value, SQL::$functions) || is_numeric($value)) {
@@ -111,7 +107,7 @@ class MySQL extends mysqli
             } else {
                 $safevalue = "'" . @parent::real_escape_string($value) . "'";
             }
-            $fields[] = "`{$field}` = {$safevalue}";
+            $fields[] = "$field = $safevalue";
         }
         $field_list = join(',', $fields);
 
@@ -125,9 +121,9 @@ class MySQL extends mysqli
 
     /**
      * Get the MySQL server's current time
-     * @return mixed
+     * @return string
      */
-    public static function Now()
+    public static function Now(): string
     {
         $inst = self::getInstance();
         $result = $inst->query("SELECT now();");

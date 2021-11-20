@@ -11,7 +11,7 @@ use Iterator;
 
 class dbCollection implements ArrayAccess, Iterator
 {
-    protected array $objs = array();
+    private array $objs = array();
     private int $position;
 
     /**
@@ -22,13 +22,11 @@ class dbCollection implements ArrayAccess, Iterator
         $this->position = 0;
     }
 
-    // <editor-fold desc="implementation code">
-
     /**
      * @param mixed $offset
      * @return bool
      */
-    public function offsetExists($offset): bool
+    final public function offsetExists($offset): bool
     {
         return isset($this->objs[$offset]);
     }
@@ -37,7 +35,7 @@ class dbCollection implements ArrayAccess, Iterator
      * @param mixed $offset
      * @return mixed|null
      */
-    public function offsetGet($offset)
+    final public function offsetGet($offset)
     {
         return $this->objs[$offset] ?? null;
     }
@@ -46,7 +44,7 @@ class dbCollection implements ArrayAccess, Iterator
      * @param mixed $offset
      * @param mixed $value
      */
-    public function offsetSet($offset, $value)
+    final public function offsetSet($offset, $value): void
     {
         if (is_null($offset)) {
             $this->objs[] = $value;
@@ -56,23 +54,24 @@ class dbCollection implements ArrayAccess, Iterator
     }
 
     /**
-     * @param $offset
+     * @param mixed $offset
      */
-    public function offsetUnset($offset)
+    final public function offsetUnset($offset): void
     {
         unset($this->objs[$offset]);
     }
-    //</editor-fold>
 
     /**
      * ResolveForeignKeys: Looks up foreign keys in the database
      * @param bool $ignore_hidden_keys
+     * @return dbCollection
      */
-    public function ResolveForeignKeys(bool $ignore_hidden_keys = true)
+    final public function ResolveForeignKeys(bool $ignore_hidden_keys = true): dbCollection
     {
         foreach ($this->objs as $o) {
             $o->ResolveForeignKeys($ignore_hidden_keys);
         }
+        return $this;
     }
 
     /**
@@ -82,7 +81,7 @@ class dbCollection implements ArrayAccess, Iterator
      * @param bool $showempty -- Optionally show null fields
      * @return array
      */
-    public function toArray(bool $hide_db_ts = false, bool $showempty = false): array
+    final public function toArray(bool $hide_db_ts = false, bool $showempty = false): array
     {
         $out_array = array();
         foreach ($this->objs as $obj) $out_array[] = $obj->toArray($hide_db_ts, $showempty);
@@ -92,7 +91,7 @@ class dbCollection implements ArrayAccess, Iterator
     /**
      * @return mixed
      */
-    public function current()
+    final public function current()
     {
         return $this->objs[$this->position];
     }
@@ -100,15 +99,15 @@ class dbCollection implements ArrayAccess, Iterator
     /**
      *
      */
-    public function next()
+    final public function next()
     {
         ++$this->position;
     }
 
     /**
-     * @return bool|float|int|string|null
+     * @return float|int|null
      */
-    public function key()
+    final public function key()
     {
         return $this->position;
     }
@@ -116,7 +115,7 @@ class dbCollection implements ArrayAccess, Iterator
     /**
      * @return bool
      */
-    public function valid(): bool
+    final public function valid(): bool
     {
         return isset($this->objs[$this->position]);
     }
@@ -124,7 +123,7 @@ class dbCollection implements ArrayAccess, Iterator
     /**
      *
      */
-    public function rewind()
+    final public function rewind(): void
     {
         $this->position = 0;
     }
@@ -134,7 +133,8 @@ class dbCollection implements ArrayAccess, Iterator
      * @param string $k
      * @return mixed
      */
-    public function find($val, $k = "id") {
+    final public function find($val, $k = "id")
+    {
         return $this->objs[array_search($val, array_column($this->objs, $k))];
     }
 }

@@ -11,5 +11,5 @@ namespace SimpleORM;
 
 trait bootable
 {
-    abstract function boot();
+    abstract function boot(): void;
 }
